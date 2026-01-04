@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root { --primary: #5d67f1; --bg: #f4f7fe; --card: #ffffff; --accent: #ff4757; --sidebar-width: 180px; --temp-saved: #fffbeb; --sent: #e6f7e6; }
+        body { margin: 0; font-family: 'Vazirmatn', sans-serif; background: var(--bg); color: #2d3436; height: 100vh; overflow: hidden; font-size: 11px; }
+        .app-container { display: flex; flex-direction: row; height: 100vh; width: 100%; }
+        .sidebar { width: var(--sidebar-width); background: #ffffff; box-shadow: 2px 0 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; padding: 15px 10px; z-index: 100; }
+        .sidebar-logo { text-align: center; font-weight: 900; color: var(--primary); font-size: 16px; margin-bottom: 25px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+        .mode-btn { padding: 8px 12px; border-radius: 8px; cursor: pointer; text-align: right; font-weight: bold; color: #636e72; transition: 0.2s; margin-bottom: 5px; font-size: 12px; }
+        .mode-btn:hover { background: #f8fafc; color: var(--primary); }
+        .mode-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(93, 103, 241, 0.2); }
+        .main-content-area { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        .modern-card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); width: 100%; max-width: 1150px; }
+        .hidden { display: none !important; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-group { margin-bottom: 10px; }
+        label { font-weight: bold; color: #64748b; display: block; margin-bottom: 4px; font-size: 11px; }
+        input, select, textarea { width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-family: 'Vazirmatn'; outline: none; background: #fafafa; font-size: 11px; box-sizing: border-box; }
+        input:disabled, select:disabled { background: #e9ecef; color: #6c757d; cursor: not-allowed; }
+        .btn { width: 100%; padding: 10px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .table-wrapper { overflow-x: auto; background: white; border-radius: 10px; border: 1px solid #edf2f7; margin-top: 8px; max-height: 55vh; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; white-space: nowrap; }
+        th { background: #f8fafc; padding: 12px 10px; color: #475569; position: sticky; top: 0; border-bottom: 2px solid #edf2f7; text-align: center; z-index: 5; }
+        td { padding: 8px; border-bottom: 1px solid #f1f5f9; text-align: center; }
+        .row-sent { background-color: var(--sent); opacity: 0.9; }
+        .row-sent td { color: #2d862d; font-weight: bold; }
+        .temp-saved { background-color: var(--temp-saved); }
+        .row-finalized { background-color: #e0e7ff; opacity: 0.9; }
+        .row-finalized td { color: #4338ca; font-weight: bold; }
+        .edit-btn { background: #64748b; color: white; border: none; padding: 4px 6px; border-radius: 6px; cursor: pointer; font-size: 10px; }
+        .logout-link { margin-top: auto; text-align: center; color: var(--accent); cursor: pointer; font-weight: bold; font-size: 11px; padding: 8px; border-top: 1px solid #f1f5f9; }
+        .stat-card { background: #fff; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; min-width: 90px; }
+        .stat-label { font-size: 9px; color: #64748b; display: block; }
+        .stat-value { font-size: 15px; font-weight: bold; }
+        .loading-indicator { position: fixed; bottom: 20px; left: 20px; background: var(--primary); color: white; padding: 8px 16px; border-radius: 6px; font-size: 11px; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .loading-indicator.success { background: #10b981; }
+        .loading-indicator.error { background: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen" style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+        <div class="modern-card" style="max-width:280px; text-align:center;">
+            <h3 style="color: var(--primary); margin-bottom:15px;">CRM LOGIN</h3>
+            <input type="text" id="u" placeholder="نام کاربری" style="margin-bottom:8px;">
+            <input type="password" id="p" placeholder="رمز عبور">
+            <button class="btn" style="margin-top:12px;" onclick="login()">ورود</button>
+        </div>
+    </div>
+
+    <div id="main-content" class="app-container hidden">
+        <aside class="sidebar">
+            <div class="sidebar-logo">ACQUISITION</div>
+            <div id="btn-new" class="mode-btn active" onclick="setMode('new')">Leads Inbox</div>
+            <div id="btn-negotiation" class="mode-btn" onclick="setMode('negotiation')">Negotiation Stage</div>
+            <div id="btn-contract-stage" class="mode-btn" onclick="setMode('contract-stage')">Contract Stage</div>
+            <div id="btn-contract" class="mode-btn" onclick="setMode('contract')">Contract Amendment</div>
+            <div id="btn-admin" class="mode-btn hidden" onclick="setMode('admin')">Manager Panel</div>
+            <div class="logout-link" onclick="handleLogoutClick()">خروج</div>
+        </aside>
+
+        <main class="main-content-area">
+            <div id="new-lead-section" class="modern-card">
+                <h3 style="color: var(--primary); margin-bottom: 15px;">CRM Form - Leads Inbox</h3>
+                <form id="crm-form">
+    <input type="hidden" name="__currentUser" id="submitter-hidden">
+
+    <div class="grid-2">
+        <div class="form-group">
+            <label>INBOX_ID</label>
+            <input type="text" name="INBOX_ID" id="f-id" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Submitted At</label>
+            <input type="text" value=""" disabled>
+        </div>
+
+        <div class="form-group">
+            <label>Merchant Contact Mobile</label>
+            <input
+                type="text"
+                name="Merchant_Contact_Mobile"
+                inputmode="numeric"
+                maxlength="11"
+                pattern="09\d{9}"
+                placeholder="09309562605"
+                oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                required
+            >
+        </div>
+
+        <div class="form-group">
+            <label>Merchant Name (FA)</label>
+            <input type="text" name="Merchant_Name_FA">
+        </div>
+
+        <div class="form-group">
+            <label>Merchant Name (EN)</label>
+            <input type="text" name="Merchant_Name_EN">
+        </div>
+
+        <div class="form-group">
+            <label>BI Name</label>
+            <input type="text" name="BI_Name">
+        </div>
+
+        <div class="form-group">
+            <label>Lead Kind</label>
+            <select name="Lead_Kind" required>
+                <option value="">Choose</option>
+                <option>Hunt</option>
+                <option>Cashier</option>
+                <option>Self</option>
+                <option>BD</option>
+                <option>Other</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Category</label>
+            <input list="category-list" name="Category" placeholder="choose">
+            <datalist id="category-list">
+                <option>تفریح و سرگرمی</option>
+                <option>مد و پوشاک</option>
+                <option>جانبی دیجیتال</option>
+                <option>طلا</option>
+                <option>ساعت و عینک</option>
+                <option>لوازم آرایشی بهداشتی</option>
+                <option>نقره اکسسوری و بدلیجات</option>
+                <option>کالاهای تند مصرف</option>
+                <option>تجهیزات ورزشی و کوهنوردی</option>
+                <option>لوازم غیر برقی خانه</option>
+                <option>دیجیتال</option>
+                <option>لوازم برقی خانه</option>
+                <option>دارو و وسایل برقی شخصی</option>
+                <option>کودک و نوزاد</option>
+                <option>مواد غذایی تازه</option>
+                <option>ابزارآلات و یدکی</option>
+                <option>پت شاپ</option>
+                <option>لوازم دکوراتیو خانه</option>
+                <option>اقامتگاه و آژانس مسافرتی</option>
+                <option>آموزشی</option>
+                <option>فرهنگ و هنر</option>
+                <option>تور داخلی</option>
+                <option>خدمات</option>
+                <option>لوازم التحریر</option>
+                <option>پوشاک ورزشی</option>
+                <option>تجهیزات کمپ و ورزشی</option>
+                <option>آرایشی و بهداشتی</option>
+                <option>اکسسوری و بدلیجات</option>
+                <option>گجت و جانبی دیجیتال</option>
+                <option>صنایع دستی و آثار هنری</option>
+                <option>لپتاپ</option>
+                <option>موبایل و تبلت</option>
+                <option>نقره</option>
+                <option>کتاب</option>
+                <option>کیف و کفش</option>
+                <option>خدمات سلامت</option>
+                <option>مکمل، دارویی و تجهیزات پزشکی</option>
+                <option>آلات موسیقی</option>
+                <option>کتاب و لوازم التحریر</option>
+                <option>وسایل برقی شخصی</option>
+                <option>ابزار و تجهیزات</option>
+                <option>آجیل و خشکبار</option>
+                <option>لوازم یدکی و مصرفی خودرو</option>
+            </datalist>
+        </div>
+
+        <div class="form-group">
+            <label>Estimated Potential</label>
+            <select name="Estimated_Potential">
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Branch Count (Approx)</label>
+            <input type="number" name="Branch_Count_Approx" min="0" step="1">
+        </div>
+
+        <div class="form-group">
+            <label>Website</label>
+            <input type="text" name="Website">
+        </div>
+
+        <div class="form-group">
+            <label>Instagram</label>
+            <input type="text" name="Instagram">
+        </div>
+
+        <div class="form-group" style="grid-column: span 2;">
+            <label>Notes</label>
+            <textarea name="Notes" rows="2"></textarea>
+        </div>
+    </div>
+
+    <div id="footer-actions" style="margin-top:12px;">
+        <button type="submit" class="btn">ثبت لید</button>
+    </div>
+</form>
+            <div id="negotiation-section" class="modern-card hidden">
+                <h3 style="color: var(--primary); margin-bottom:15px;">Negotiation Stage</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr id="negotiation-headers"></tr></thead>
+                        <tbody id="negotiation-tbody"></tbody>
+                    </table>
+                </div>
+                <div id="negotiation-edit-form-container" class="modern-card hidden" style="margin-top:15px; border:2px solid var(--primary);">
+                    <h4 style="color: var(--primary); margin-bottom:12px;">ویرایش لید</h4>
+                    <div id="negotiation-edit-form" class="grid-2"></div>
+                    <div style="display:flex; gap:8px; margin-top:12px;">
+                        <button class="btn" onclick="saveTemporary()">ذخیره موقت</button>
+                        <button class="btn" style="background:#f59e0b;" onclick="sendForAdjustment()">ارسال برای تنظیم قرارداد</button>
+                        <button class="btn" style="background:#ef4444;" onclick="closeNegotiationEdit()">انصراف</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="contract-stage-section" class="modern-card hidden">
+                <h3 style="color: var(--primary); margin-bottom:15px;">Contract Stage</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr id="contract-stage-headers"></tr></thead>
+                        <tbody id="contract-stage-tbody"></tbody>
+                    </table>
+                </div>
+                <div id="contract-stage-edit-form-container" class="modern-card hidden" style="margin-top:15px; border:2px solid var(--primary);">
+                    <h4 style="color: var(--primary); margin-bottom:12px;">ویرایش لید</h4>
+                    <div id="contract-stage-edit-form" class="grid-2"></div>
+                    <div style="display:flex; gap:8px; margin-top:12px;">
+                        <button class="btn" onclick="saveContractStageTemporary()">ذخیره موقت</button>
+                        <button class="btn" style="background:#10b981;" onclick="saveContractStageFinal()">ذخیره نهایی</button>
+                        <button class="btn" style="background:#ef4444;" onclick="closeContractStageEdit()">انصراف</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="contract-section" class="modern-card hidden">
+                <h3 style="color: var(--primary); margin-bottom:15px;">Contract Amendment</h3>
+                <div class="grid-2" style="margin-bottom:12px;">
+                    <div class="form-group">
+                        <label>نوع قرارداد (Contract Type)</label>
+                        <select id="contract-type-select">
+                            <option value="Online">Online</option>
+                            <option value="Online-Offline">Online-Offline</option>
+                            <option value="Offline">Offline</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>نوع تغییر (الحاقیه)</label>
+                        <select id="addon-type-select">
+                            <option value="تغییر کمیسیون">تغییر کمیسیون</option>
+                            <option value="تغییر حساب">تغییر حساب</option>
+                            <option value="تغییر نوع قرارداد">تغییر نوع قرارداد</option>
+                            <option value="سایر">سایر</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; margin-bottom:12px;">
+                    <input type="text" id="bi-search-input" placeholder="جستجو بر اساس BI Name" style="flex:1;">
+                    <button class="btn" style="width:auto; padding:10px 20px;" onclick="searchContract()">جستجو</button>
+                </div>
+                <div id="contract-results-container" class="hidden">
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr id="contract-headers"></tr></thead>
+                            <tbody id="contract-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="edit-form-container" class="modern-card hidden" style="margin-top:15px; border:2px solid var(--primary);">
+                    <h4 style="color: var(--primary); margin-bottom:12px;">ویرایش و ثبت ردیف جدید</h4>
+                    <div id="edit-form" class="grid-2"></div>
+                    <button class="btn" style="margin-top:12px;" onclick="saveEditedRow()">ذخیره تغییرات و ثبت ردیف جدید</button>
+                </div>
+            </div>
+
+            <div id="admin-table-section" class="modern-card hidden">
+                <h3 style="color: var(--primary); margin-bottom:15px;">Manager Panel</h3>
+                <div style="display:flex; gap:12px; margin-bottom:15px;">
+                    <div class="stat-card"><span class="stat-label">Total Leads</span><div class="stat-value" id="s-total">0</div></div>
+                    <div class="stat-card"><span class="stat-label">Approved</span><div class="stat-value" id="s-app">0</div></div>
+                    <div class="stat-card"><span class="stat-label">Pending</span><div class="stat-value" id="s-wait">0</div></div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label>فیلتر تاریخ:</label>
+                    <input type="date" id="date-slicer" onchange="loadTable()">
+                </div>
+                <div class="table-wrapper" style="margin-bottom:15px;">
+                    <table>
+                        <thead><tr id="table-headers"></tr></thead>
+                        <tbody id="admin-tbody"></tbody>
+                    </table>
+                </div>
+                <div style="margin-top:20px;">
+                    <h4 style="color: var(--primary); margin-bottom:12px;">سیستم لاگ</h4>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>کاربر</th><th>زمان</th><th>فعالیت</th><th>جزئیات</th></tr></thead>
+                            <tbody id="log-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="loading-indicator" class="loading-indicator hidden"></div>
+
+    <script>
+        let currentUser = null;
+        let currentUserIsAdmin = false;
+        let allData = null;
+        let currentEditRowIndex = -1;
+        let negotiationData = [];
+        let negotiationHeaders = [];
+        let contractStageData = [];
+        let contractStageHeaders = [];
+        let currentSearchRows = [];
+        let currentHeaders = [];
+        let dropdownOptions = {};
+        let currentContractStageEditIndex = -1;
+
+const adminCols = ["INBOX_ID", "Merchant_Name_FA", "Contact", "Lead_Kind", "Category", "Potential", "Submitter", "Submitted_At"];
+
+const editableFields = [
+    "شماره قرارداد", 
+    "طرف قرارداد", 
+    "Branch Code", 
+    "کد ملی / شناسه ملی", 
+    "شماره ثبت", 
+    "آدرس", 
+    "کد پستی", 
+    "نام تجاری", 
+    "E-Mail", 
+    "کمیسیون (درصد)", 
+    "کمیسیون غیراختصاصی", 
+    "میزان جریمه", 
+    "بند جریمه Asset", 
+    "مدت قرارداد", 
+    "تاریخ شروع قرارداد", 
+    "تاریخ پایان قرارداد", 
+    "تمدید خودکار", 
+    "تاریخ شروع الحاقیه", 
+    "نوع الحاقیه", 
+    "نوع بند زمان الحاقیه", 
+    "مدت تسویه", 
+    "اختصاصی / غیر اختصاصی", 
+    "تعهدات", 
+    "شماره حساب", 
+    "شماره شبا", 
+    "بانک", 
+    "صاحب حساب",
+    "Scan?",
+    "Upload?"
+];
+
+const contractStageReadOnlyFields = [
+    "Linked_PMER_ID",
+    "INBOX_ID",
+    "Created_Date",
+    "Merchant_Name_FA",
+    "Merchant_Name_EN",
+    "BI_Name",
+    "Category",
+    "Key_or_LongTail",
+    "Lead_Kind",
+    "City",
+    "Mall",
+    "Sub_Category",
+    "Branch Count",
+    "Payment Method",
+    "Settlement",
+    "Contract_Type",
+    "Commission",
+    "Contact's name",
+    "Contact's position",
+    "Phone Number",
+    "Final Acq_Status"
+];
+
+const editableNegotiationFields = [
+    "Any Details about Source?", 
+    "City", 
+    "Mall", 
+    "Sub_Category", 
+    "Branch Count", 
+    "Main Social Platform", 
+    "ID/URL", 
+    "Followers", 
+    "Payment Method", 
+    "Settlement", 
+    "Contract_Type", 
+    "Commission", 
+    "Contact's name", 
+    "Contact's position", 
+    "Phone Number", 
+    "Notes"
+];
+
+const dropdownFields = [
+    "City", 
+    "Mall", 
+    "Sub_Category", 
+    "Branch Count", 
+    "Main Social Platform", 
+    "Followers", 
+    "Payment Method", 
+    "Settlement", 
+    "Contract_Type"
+];
+
+        function showLoading(message) {
+            const indicator = document.getElementById('loading-indicator');
+            indicator.textContent = message || 'در حال پردازش...';
+            indicator.classList.remove('hidden', 'success', 'error');
+        }
+
+        function hideLoading(success, message) {
+            const indicator = document.getElementById('loading-indicator');
+            if (success !== undefined) {
+                indicator.classList.add(success ? 'success' : 'error');
+                indicator.textContent = message || (success ? 'موفقیت' : 'خطا');
+                setTimeout(() => {
+                    indicator.classList.add('hidden');
+                }, 2000);
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+
+        function logActivity(activity, details) {
+            if (!currentUser) return;
+            google.script.run.withSuccessHandler(() => {
+                if (currentUserIsAdmin) {
+                    loadLogs();
+                }
+            }).logActivity(currentUser, activity, details);
+        }
+
+        window.onload = function() {
+            const saved = localStorage.getItem('crmUser');
+            const savedIsAdmin = localStorage.getItem('crmUserIsAdmin') === 'true';
+            if (saved) {
+                currentUser = saved;
+                currentUserIsAdmin = savedIsAdmin;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                if (currentUserIsAdmin) {
+                    document.getElementById('btn-admin').classList.remove('hidden');
+                } else {
+                    document.getElementById('btn-admin').classList.add('hidden');
+                }
+                setMode('new');
+            } else {
+                localStorage.clear();
+            }
+        };
+
+        function login() {
+            const u = document.getElementById('u').value;
+            const p = document.getElementById('p').value;
+            showLoading('در حال ورود...');
+            google.script.run
+                .withSuccessHandler(result => {
+                    if (result.success) {
+                        currentUser = result.name;
+                        currentUserIsAdmin = result.isAdmin;
+                        localStorage.setItem('crmUser', currentUser);
+                        localStorage.setItem('crmUserIsAdmin', result.isAdmin);
+                        localStorage.removeItem('currentMode');
+                        allData = null;
+                        negotiationData = [];
+                        contractStageData = [];
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('main-content').classList.remove('hidden');
+                        if (result.isAdmin) {
+                            document.getElementById('btn-admin').classList.remove('hidden');
+                        } else {
+                            document.getElementById('btn-admin').classList.add('hidden');
+                        }
+                        logActivity('ورود به سیستم', '');
+                        setMode('new');
+                        hideLoading(true, 'ورود موفق');
+                    } else {
+                        hideLoading(false, 'نام کاربری یا رمز عبور اشتباه است');
+                        Swal.fire('خطا', 'نام کاربری یا رمز عبور اشتباه است', 'error');
+                    }
+                })
+                .withFailureHandler(err => {
+                    hideLoading(false, 'خطا در ورود');
+                    Swal.fire('خطا', 'خطا در ارتباط با سرور', 'error');
+                })
+                .checkLogin(u, p);
+        }
+
+        function handleLogoutClick() {
+            Swal.fire({
+                title: 'خروج از حساب',
+                text: "آیا مطمئن هستید؟",
+                icon: 'question',
+                showCancelButton: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    logActivity('خروج از سیستم', '');
+                    localStorage.clear();
+                    currentUser = null;
+                    currentUserIsAdmin = false;
+                    allData = null;
+                    negotiationData = [];
+                    contractStageData = [];
+                    document.getElementById('login-screen').classList.remove('hidden');
+                    document.getElementById('main-content').classList.add('hidden');
+                }
+            });
+        }
+
+        function setMode(m) {
+
+    document.querySelectorAll('.mode-btn').forEach(b =>
+        b.classList.remove('active')
+    );
+
+    const activeBtn = document.getElementById('btn-' + m);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+
+
+    const sections = {
+        'new': 'new-lead-section',
+        'negotiation': 'negotiation-section',
+        'contract-stage': 'contract-stage-section',
+        'contract': 'contract-section',
+        'admin': 'admin-table-section'
+    };
+
+    Object.keys(sections).forEach(key => {
+        const el = document.getElementById(sections[key]);
+        if (el) {
+            el.classList.toggle('hidden', key !== m);
+        }
+    });
+
+
+    const footer = document.getElementById('footer-actions');
+    if (footer) {
+        footer.classList.toggle('hidden', m !== 'new');
+    }
+
+
+    if (m === 'new') {
+        const idInput = document.getElementById('f-id');
+        if (idInput && !idInput.value) {
+            google.script.run
+                .withSuccessHandler(id => idInput.value = id)
+                .getNextInboxId();
+        }
+    }
+
+    if (m === 'admin') {
+        loadTable();
+        loadLogs();
+    }
+
+    if (m === 'negotiation') {
+        loadNegotiationTable();
+    }
+
+    if (m === 'contract-stage') {
+        loadContractStageTable();
+    }
+}
+
+
+            if (m === 'new' && !document.getElementById('f-id').value) {
+                google.script.run.withSuccessHandler(id => document.getElementById('f-id').value = id).getNextInboxId();
+            }
+            if (m === 'admin') {
+                loadTable();
+                loadLogs();
+            }
+            if (m === 'negotiation') loadNegotiationTable();
+            if (m === 'contract-stage') loadContractStageTable();
+        }
+
+        function loadTable() {
+            if (!currentUserIsAdmin) return;
+            showLoading('در حال بارگذاری...');
+            const hRow = document.getElementById('table-headers');
+            hRow.innerHTML = adminCols.map(c => `<th>${c}</th>`).join('') + "<th>Status</th><th>Priority</th><th>Owner</th><th>Action</th>";
+            google.script.run
+                .withSuccessHandler(data => {
+                    hideLoading();
+                    allData = data;
+                    let rowsToDisplay = data.rows;
+                    const dVal = document.getElementById('date-slicer').value;
+                    if (dVal) {
+                        rowsToDisplay = data.rows.filter(r => {
+                            const subAt = r[data.headers.indexOf("Submitted_At")].split(' ')[0].split('/');
+                            const formattedRowDate = `${subAt[2]}-${subAt[1].padStart(2,'0')}-${subAt[0].padStart(2,'0')}`;
+                            return formattedRowDate === dVal;
+                        });
+                    }
+                    updateStats(rowsToDisplay, data.headers);
+                    renderTable(rowsToDisplay, data.headers);
+                })
+                .withFailureHandler(err => {
+                    hideLoading(false, 'خطا در بارگذاری');
+                    Swal.fire('خطا', 'خطا در بارگذاری داده‌ها', 'error');
+                })
+                .getAllLeadsForAdmin();
+        }
+
+        function updateStats(rows, h) {
+            document.getElementById('s-total').innerText = rows.length;
+            document.getElementById('s-app').innerText = rows.filter(r => r[h.indexOf("Manager_Status")] === "Approved").length;
+            document.getElementById('s-wait').innerText = rows.filter(r => r[h.indexOf("Manager_Status")] !== "Approved").length;
+        }
+
+        function renderTable(rows, h) {
+            const tbody = document.getElementById('admin-tbody');
+            tbody.innerHTML = "";
+            rows.forEach((row) => {
+                const idx = allData.rows.indexOf(row);
+                const status = row[h.indexOf("Manager_Status")];
+                const prio = row[h.indexOf("Manager_Priority")];
+                const owner = row[h.indexOf("Assigned_Owner")];
+                const isApproved = (status === "Approved");
+                let tr = `<tr id="row-${idx}" class="${isApproved ? 'row-approved' : ''}">`;
+                adminCols.forEach(col => tr += `<td>${row[h.indexOf(col)] || ""}</td>`);
+                tr += `<td><select id="st-${idx}" class="editable-${idx}" ${isApproved ? 'disabled' : ''}>
+                    <option value="Not Checked" ${status=='Not Checked'?'selected':''}>Not Checked</option>
+                    <option value="Approved" ${status=='Approved'?'selected':''}>Approved</option>
+                    <option value="Rejected" ${status=='Rejected'?'selected':''}>Rejected</option>
+                </select></td>
+                <td><select id="pr-${idx}" class="editable-${idx}" ${isApproved ? 'disabled' : ''}>
+                    <option value="High" ${prio=='High'?'selected':''}>High</option>
+                    <option value="Medium" ${prio=='Medium'?'selected':''}>Medium</option>
+                    <option value="Low" ${prio=='Low'?'selected':''}>Low</option>
+                </select></td>
+                <td><select id="ow-${idx}" class="editable-${idx}" ${isApproved ? 'disabled' : ''}>
+                    <option value="qazal" ${owner=='qazal'?'selected':''}>qazal</option>
+                    <option value="arian" ${owner=='arian'?'selected':''}>arian</option>
+                    <option value="negar" ${owner=='negar'?'selected':''}>negar</option>
+                    <option value="mojtaba" ${owner=='mojtaba'?'selected':''}>mojtaba</option>
+                </select></td>
+                <td><div style="display:flex; gap:4px;">
+                    ${isApproved ? `<button type="button" class="unsave-btn" onclick="unsaveRow(${idx})">↩</button>`
+                    : `<button type="button" class="save-btn" onclick="saveRow(${idx})">Save</button>`}
+                    <button type="button" class="edit-btn" onclick="unlockRow(${idx})">✎</button>
+                    <button type="button" class="del-btn" onclick="delRow(${idx})">Del</button>
+                </div></td></tr>`;
+                tbody.innerHTML += tr;
+            });
+        }
+
+        function unlockRow(idx) {
+            document.querySelectorAll('.editable-' + idx).forEach(el => el.disabled = false);
+            document.getElementById('row-' + idx).classList.remove('row-approved');
+        }
+
+        function saveRow(idx) {
+            const s = document.getElementById('st-' + idx).value;
+            const p = document.getElementById('pr-' + idx).value;
+            const o = document.getElementById('ow-' + idx).value;
+            showLoading('در حال ذخیره...');
+            google.script.run
+                .withSuccessHandler(() => {
+                    hideLoading(true, 'ذخیره شد');
+                    logActivity('به‌روزرسانی وضعیت لید', `Status: ${s}`);
+                    loadTable();
+                })
+                .withFailureHandler(err => {
+                    hideLoading(false, 'ذخیره انجام نشد');
+                    Swal.fire('خطا', 'ذخیره انجام نشد', 'error');
+                })
+                .updateLeadStatus(idx, s, p, o);
+        }
+
+        function unsaveRow(idx) {
+            showLoading('در حال بازگشت...');
+            google.script.run
+                .withSuccessHandler(() => {
+                    hideLoading(true, 'بازگشت انجام شد');
+                    logActivity('بازگشت وضعیت لید', '');
+                    loadTable();
+                })
+                .withFailureHandler(err => {
+                    hideLoading(false, 'خطا');
+                    Swal.fire('خطا', 'خطا در بازگشت', 'error');
+                })
+                .updateLeadStatus(idx, "Not Checked", "Medium", "qazal");
+        }
+
+        function delRow(idx) {
+            Swal.fire({title:'حذف لید؟', icon:'warning', showCancelButton:true}).then(r => {
+                if (r.isConfirmed) {
+                    showLoading('در حال حذف...');
+                    google.script.run
+                        .withSuccessHandler(() => {
+                            hideLoading(true, 'حذف شد');
+                            logActivity('حذف لید', '');
+                            loadTable();
+                        })
+                        .withFailureHandler(err => {
+                            hideLoading(false, 'حذف انجام نشد');
+                            Swal.fire('خطا', 'حذف انجام نشد', 'error');
+                        })
+                        .deleteLeadRow(idx);
+                }
+            });
+        }
+
+        function searchContract() {
+            const biName = document.getElementById('bi-search-input').value.trim();
+            if (!biName) return Swal.fire('خطا', 'لطفاً BI Name را وارد کنید', 'warning');
+            google.script.run.withSuccessHandler(res => {
+                if (!res.rows || res.rows.length === 0) return Swal.fire('یافت نشد', 'موردی پیدا نشد', 'info');
+                currentSearchRows = res.rows;
+                currentHeaders = res.headers;
+                document.getElementById('contract-results-container').classList.remove('hidden');
+                document.getElementById('contract-headers').innerHTML = res.headers.map(h => `<th>${h}</th>`).join('') + "<th>عملیات</th>";
+                let html = "";
+                res.rows.forEach((row, index) => {
+                    html += `<tr>${row.map(cell => `<td>${cell || ''}</td>`).join('')}
+                    <td><button type="button" class="save-btn" onclick="initiateAddon(${index})">انتخاب</button></td></tr>`;
+                });
+                document.getElementById('contract-tbody').innerHTML = html;
+            }).searchInContractStage(biName);
+        }
+
+        function initiateAddon(rowIndex) {
+            const rowData = currentSearchRows[rowIndex];
+            const addonType = document.getElementById('addon-type-select').value;
+            const contractType = document.getElementById('contract-type-select').value;
+            const formContainer = document.getElementById('edit-form');
+            formContainer.innerHTML = '';
+            currentHeaders.forEach((header, i) => {
+                let value = rowData[i] || '';
+                if (header === "الحاقیه") value = addonType;
+                if (header === "type") value = contractType;
+                const isEditable = editableFields.includes(header);
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                div.innerHTML = `
+                    <label>${header}</label>
+                    <input type="text" name="${header}" value="${value}" ${isEditable ? '' : 'disabled'}>
+                `;
+                formContainer.appendChild(div);
+            });
+            document.getElementById('edit-form-container').classList.remove('hidden');
+        }
+
+        function saveEditedRow() {
+            const form = document.getElementById('edit-form');
+            const newRow = currentHeaders.map(header => {
+                const input = form.querySelector(`input[name="${header}"]`);
+                return input ? input.value : '';
+            });
+            showLoading('در حال ثبت...');
+            google.script.run
+                .withSuccessHandler(res => {
+                    if (res === "Success") {
+                        hideLoading(true, 'ثبت شد');
+                        logActivity('ثبت ردیف جدید Contract Amendment', '');
+                        Swal.fire('موفقیت', 'ردیف جدید ثبت شد', 'success');
+                        document.getElementById('edit-form-container').classList.add('hidden');
+                        searchContract();
+                    }
+                })
+                .withFailureHandler(err => {
+                    hideLoading(false, 'ثبت انجام نشد');
+                    Swal.fire('خطا', 'ثبت انجام نشد', 'error');
+                })
+                .insertIntoFirstEmptyRow(newRow);
+        }
+
+        function loadNegotiationTable() {
+            showLoading('در حال بارگذاری...');
+            google.script.run
+                .withSuccessHandler(data => {
+                    hideLoading();
+                    negotiationData = data.rows;
+                    negotiationHeaders = data.headers;
+                    const hRow = document.getElementById('negotiation-headers');
+                    hRow.innerHTML = data.headers.map(h => `<th>${h}</th>`).join('') + "<th>Action</th>";
+                    const tbody = document.getElementById('negotiation-tbody');
+                    tbody.innerHTML = "";
+                    
+                    if (data.rows.length === 0) {
+                        tbody.innerHTML = "<tr><td colspan='30' style='text-align:center; padding:40px; color:#94a3b8;'>هیچ لیدی در مرحله Negotiation وجود ندارد</td></tr>";
+                        return;
+                    }
+                    
+                    data.rows.forEach((rowObj, idx) => {
+                        const row = rowObj.data;
+                        const acqIdx = negotiationHeaders.indexOf("Acq_Stage");
+                        const isSent = acqIdx !== -1 && row[acqIdx] === "Sent for contract adjustment";
+                        const updatedIdx = negotiationHeaders.indexOf("Acq_Stage_Updated_At");
+                        const isTempSaved = updatedIdx !== -1 && row[updatedIdx] !== "";
+                        
+                        let tr = `<tr class="${isSent ? 'row-sent' : ''} ${isTempSaved && !isSent ? 'temp-saved' : ''}">`;
+                        row.forEach(cell => tr += `<td>${cell || ''}</td>`);
+                        
+                        if (isSent) {
+                            tr += `<td><button class="edit-btn" disabled style="opacity:0.5;">ارسال برای قرارداد</button></td>`;
+                        } else {
+                            tr += `<td><button class="edit-btn" onclick="editNegotiationRow(${idx})">ویرایش</button></td>`;
+                        }
+                        tr += `</tr>`;
+                        tbody.innerHTML += tr;
+                    });
+                })
+                .withFailureHandler(err => {
+                    hideLoading(false, 'خطا در بارگذاری');
+                    Swal.fire('خطا', 'خطا در بارگذاری داده‌ها', 'error');
+                })
+                .getAllNegotiationLeads();
+        }
+
+        function editNegotiationRow(idx) {
+            const rowObj = negotiationData[idx];
+            const row = rowObj.data;
+            const acqIdx = negotiationHeaders.indexOf("Acq_Stage");
+            
+            if (acqIdx !== -1 && row[acqIdx] === "Sent for contract adjustment") {
+                Swal.fire('قفل شده', 'این لید ارسال شده و قابل ویرایش نیست.', 'info');
+                return;
+            }
+            
+            currentEditRowIndex = idx;
+            
+            google.script.run.withSuccessHandler(options => {
+                dropdownOptions = options;
+                const form = document.getElementById('negotiation-edit-form');
+                form.innerHTML = '';
+                
+                negotiationHeaders.forEach((header, i) => {
+                    let value = row[i] || '';
+                    const isEditable = editableNegotiationFields.includes(header);
+                    const div = document.createElement('div');
+                    div.className = 'form-group';
+                    
+                    if (dropdownFields.includes(header) && dropdownOptions[header]) {
+                        let selectHtml = `<select name="${header}"><option value="">انتخاب کنید</option>`;
+                        dropdownOptions[header].forEach(opt => {
+                            selectHtml += `<option value="${opt}" ${opt === value ? 'selected' : ''}>${opt}</option>`;
+                        });
+                        selectHtml += `</select>`;
+                        div.innerHTML = `<label>${header}</label>${selectHtml}`;
+                    } else if (header === "ID/URL" && value) {
+                        div.innerHTML = `<label>${header}</label><a href="${value}" target="_blank">${value}</a><input type="hidden" name="${header}" value="${value}">`;
+                    } else if (header === "Commission") {
+                        div.innerHTML = `<label>${header}</label><div style="display:flex;"><input type="number" name="${header}" value="${value}" step="0.01" style="flex:1;" ${isEditable ? '' : 'disabled'}><span style="padding:6px 10px;">%</span></div>`;
+                    } else {
+                        div.innerHTML = `<label>${header}</label><input type="text" name="${header}" value="${value}" ${isEditable ? '' : 'disabled'}>`;
+                    }
+                    form.appendChild(div);
+                });
+                
+                document.getElementById('negotiation-edit-form-container').classList.remove('hidden');
+            }).getDropdownOptions();
+        }
+
+        function closeNegotiationEdit() {
+            document.getElementById('negotiation-edit-form-container').classList.add('hidden');
+            currentEditRowIndex = -1;
+        }
+
+        function saveTemporary() {
+            if (currentEditRowIndex === -1) return;
+            
+            const rowObj = negotiationData[currentEditRowIndex];
+            const identifier = {
+                pmerId: rowObj.pmerId,
+                inboxId: rowObj.inboxId
+            };
+            
+            const form = document.getElementById('negotiation-edit-form');
+            const payload = {};
+            
+            editableNegotiationFields.forEach(field => {
+                const input = form.querySelector(`[name="${field}"]`);
+                if (input) payload[field] = input.value.trim();
+            });
+            
+            showLoading('در حال ذخیره موقت...');
+            google.script.run
+                .withSuccessHandler(() => {
+                    hideLoading(true, 'ذخیره موقت انجام شد');
+                    logActivity('ذخیره موقت Negotiation', `PMER: ${rowObj.pmerId || rowObj.inboxId}`);
+                    closeNegotiationEdit();
+                    loadNegotiationTable();
+                })
+                .withFailureHandler(err => {
+                    hideLoading(false, 'ذخیره انجام نشد');
+                    Swal.fire('خطا', 'ذخیره انجام نشد: ' + err.message, 'error');
+                })
+                .updateNegotiationRow(identifier, payload);
+        }
+
+        function sendForAdjustment() {
+            if (currentEditRowIndex === -1) return;
+            
+            Swal.fire({
+                title: 'تایید انتقال',
+                text: "آیا مایل هستید این ردیف به Contract Stage منتقل شود؟",
+                icon: 'question',
+                showCancelButton: true
+            }).then(result => {
+                if (result.isConfirmed) {
+                    const rowObj = negotiationData[currentEditRowIndex];
+                    const identifier = {
+                        pmerId: rowObj.pmerId,
+                        inboxId: rowObj.inboxId
+                    };
+                    
+                    showLoading('در حال انتقال...');
+                    google.script.run
+                        .withSuccessHandler(() => {
+                            hideLoading(true, 'انتقال انجام شد');
+                            logActivity('انتقال به Contract Stage', `PMER: ${rowObj.pmerId || rowObj.inboxId}`);
+                            Swal.fire('موفقیت', 'ارسال شد و قفل گردید', 'success');
+                            closeNegotiationEdit();
+                            loadNegotiationTable();
+                        })
+                        .withFailureHandler(err => {
+                            hideLoading(false, 'انتقال انجام نشد');
+                            Swal.fire('خطا', 'انتقال انجام نشد: ' + err.message, 'error');
+                        })
+                        .setSentForAdjustment(identifier);
+                }
+            });
+        }
+
+        function loadContractStageTable() {
+            showLoading('در حال بارگذاری...');
+            google.script.run
+                .withSuccessHandler(data => {
+                    hideLoading();
+                    contractStageData = data.rows;
+                    contractStageHeaders = data.headers;
+                    const hRow = document.getElementById('contract-stage-headers');
+                    hRow.innerHTML = data.headers.map(h => `<th>${h}</th>`).join('') + "<th>Action</th>";
+                    const tbody = document.getElementById('contract-stage-tbody');
+                    tbody.innerHTML = "";
+                    
+                    if (data.rows.length === 0) {
+                        tbody.innerHTML = "<tr><td colspan='30' style='text-align:center; padding:40px; color:#94a3b8;'>هیچ لیدی در مرحله Contract Stage وجود ندارد</td></tr>";
+                        return;
+                    }
+                    
+                    data.rows.forEach((rowObj, idx) => {
+                        const row = rowObj.data;
+                        const finalStatusIdx = contractStageHeaders.indexOf("Final_Contract_Status");
+                        const isFinalized = finalStatusIdx !== -1 && row[finalStatusIdx] === "Finalized";
+                        const updatedIdx = contractStageHeaders.indexOf("Contract_Updated_At");
+                        const isTempSaved = updatedIdx !== -1 && row[updatedIdx] !== "";
+                        
+                        let tr = `<tr class="${isFinalized ? 'row-finalized' : ''} ${isTempSaved && !isFinalized ? 'temp-saved' : ''}">`;
+                        row.forEach(cell => tr += `<td>${cell || ''}</td>`);
+                        
+                        if (isFinalized) {
+                            tr += `<td><button class="edit-btn" disabled style="opacity:0.5;">نهایی شده</button></td>`;
+                        } else {
+                            tr += `<td><button class="edit-btn" onclick="editContractStageRow(${idx})">ویرایش</button></td>`;
+                        }
+                        tr += `</tr>`;
+                        tbody.innerHTML += tr;
+                    });
+                })
+                .withFailureHandler(err => {
+                    hideLoading(false, 'خطا در بارگذاری');
+                    Swal.fire('خطا', 'خطا در بارگذاری داده‌ها', 'error');
+                })
+                .getAllContractStageLeads();
+        }
+
+        function editContractStageRow(idx) {
+            const rowObj = contractStageData[idx];
+            const row = rowObj.data;
+            const finalStatusIdx = contractStageHeaders.indexOf("Final_Contract_Status");
+            
+            if (finalStatusIdx !== -1 && row[finalStatusIdx] === "Finalized") {
+                Swal.fire('قفل شده', 'این لید نهایی شده و قابل ویرایش نیست.', 'info');
+                return;
+            }
+            
+            currentContractStageEditIndex = idx;
+            
+            const form = document.getElementById('contract-stage-edit-form');
+            form.innerHTML = '';
+            
+            contractStageHeaders.forEach((header, i) => {
+                let value = row[i] || '';
+                const isReadOnly = contractStageReadOnlyFields.includes(header);
+                const isEditable = editableFields.includes(header);
+                
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                
+                if (isReadOnly || !isEditable) {
+                    div.innerHTML = `<label>${header}</label><input type="text" name="${header}" value="${value}" disabled>`;
+                } else {
+                    div.innerHTML = `<label>${header}</label><input type="text" name="${header}" value="${value}">`;
+                }
+                form.appendChild(div);
+            });
+            
+            document.getElementById('contract-stage-edit-form-container').classList.remove('hidden');
+        }
+
+        function closeContractStageEdit() {
+            document.getElementById('contract-stage-edit-form-container').classList.add('hidden');
+            currentContractStageEditIndex = -1;
+        }
+
+        function saveContractStageTemporary() {
+            if (currentContractStageEditIndex === -1) return;
+            
+            const rowObj = contractStageData[currentContractStageEditIndex];
+            const identifier = {
+                pmerId: rowObj.pmerId,
+                inboxId: rowObj.inboxId
+            };
+            
+            const form = document.getElementById('contract-stage-edit-form');
+            const payload = {};
+            
+            editableFields.forEach(field => {
+                const input = form.querySelector(`[name="${field}"]`);
+                if (input && !input.disabled) payload[field] = input.value.trim();
+            });
+            
+            showLoading('در حال ذخیره موقت...');
+            google.script.run
+                .withSuccessHandler(() => {
+                    hideLoading(true, 'ذخیره موقت انجام شد');
+                    logActivity('ذخیره موقت Contract Stage', `PMER: ${rowObj.pmerId || rowObj.inboxId}`);
+                    closeContractStageEdit();
+                    loadContractStageTable();
+                })
+                .withFailureHandler(err => {
+                    hideLoading(false, 'ذخیره انجام نشد');
+                    Swal.fire('خطا', 'ذخیره انجام نشد: ' + err.message, 'error');
+                })
+                .updateContractStageRow(identifier, payload, false);
+        }
+
+        function saveContractStageFinal() {
+            if (currentContractStageEditIndex === -1) return;
+            
+            Swal.fire({
+                title: 'تایید نهایی',
+                text: "آیا مطمئن هستید که می‌خواهید این ردیف را نهایی کنید؟",
+                icon: 'question',
+                showCancelButton: true
+            }).then(result => {
+                if (result.isConfirmed) {
+                    const rowObj = contractStageData[currentContractStageEditIndex];
+                    const identifier = {
+                        pmerId: rowObj.pmerId,
+                        inboxId: rowObj.inboxId
+                    };
+                    
+                    const form = document.getElementById('contract-stage-edit-form');
+                    const payload = {};
+                    
+                    editableFields.forEach(field => {
+                        const input = form.querySelector(`[name="${field}"]`);
+                        if (input && !input.disabled) payload[field] = input.value.trim();
+                    });
+                    
+                    showLoading('در حال ذخیره نهایی...');
+                    google.script.run
+                        .withSuccessHandler(() => {
+                            hideLoading(true, 'ذخیره نهایی انجام شد');
+                            logActivity('ذخیره نهایی Contract Stage', `PMER: ${rowObj.pmerId || rowObj.inboxId}`);
+                            closeContractStageEdit();
+                            loadContractStageTable();
+                        })
+                        .withFailureHandler(err => {
+                            hideLoading(false, 'ذخیره انجام نشد');
+                            Swal.fire('خطا', 'ذخیره انجام نشد: ' + err.message, 'error');
+                        })
+                        .updateContractStageRow(identifier, payload, true);
+                }
+            });
+        }
+
+        function loadLogs() {
+            if (!currentUserIsAdmin) return;
+            google.script.run.withSuccessHandler(logs => {
+                const tbody = document.getElementById('log-tbody');
+                tbody.innerHTML = "";
+                if (logs && logs.length > 0) {
+                    logs.forEach(log => {
+                        tbody.innerHTML += `<tr><td>${log.user || ''}</td><td>${log.time || ''}</td><td>${log.activity || ''}</td><td>${log.details || ''}</td></tr>`;
+                    });
+                } else {
+                    tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:20px; color:#94a3b8;'>هیچ لاگی وجود ندارد</td></tr>";
+                }
+            }).getLogs();
+        }
+
+document.getElementById('submitter-hidden').value = currentUser;
+
+document.getElementById('crm-form').onsubmit = function(e) {
+    e.preventDefault();
+    showLoading('در حال ثبت...');
+
+    let d = {};
+    new FormData(e.target).forEach((v, k) => d[k] = v);
+
+    google.script.run
+        .withSuccessHandler(() => {
+            hideLoading(true, 'ثبت شد');
+            logActivity('ثبت لید جدید', `INBOX_ID: ${d.INBOX_ID}`);
+            Swal.fire({ icon:'success', title:'ثبت شد', timer:1000, showConfirmButton:false });
+            e.target.reset();
+            document.getElementById('f-id').value = '';
+            google.script.run.withSuccessHandler(id =>
+                document.getElementById('f-id').value = id
+            ).getNextInboxId();
+        })
+        .withFailureHandler(err => {
+            hideLoading(false, 'ثبت انجام نشد');
+            Swal.fire('خطا', 'ثبت انجام نشد: ' + err.message, 'error');
+        })
+        .submitToSheet(d, "Leads_Inbox");
+};
+    </script>
+</body>
+</html>
+
+<script>
+(function(){
+  if (typeof window.loadInboxId === 'function') {
+    window.loadInboxId = function(){};
+  }
+
+  const form = document.getElementById('leadForm');
+  if (!form) return;
+
+  const clone = form.cloneNode(true);
+  form.parentNode.replaceChild(clone, form);
+
+  clone.addEventListener('submit', function(e){
+    e.preventDefault();
+    const fd = new FormData(clone);
+    const payload = {};
+    fd.forEach((v,k)=>payload[k]=v);
+    payload.__submitter = window.currentUser || '';
+
+    const mobile = String(payload.Merchant_Contact_Mobile || '');
+    if (!/^09\\d{9}$/.test(mobile)) {
+      Swal.fire('خطا','شماره تماس باید ۱۱ رقم و با 09 شروع شود','error');
+      return;
+    }
+
+    google.script.run.withSuccessHandler(function(res){
+      Swal.fire('ثبت شد','INBOX_ID: '+ res.inboxId,'success');
+      const idEl = document.getElementById('inboxId');
+      if (idEl) idEl.value = res.inboxId;
+      clone.reset();
+      const s = document.getElementById('submitterView');
+      if (s) s.value = window.currentUser || '';
+    }).withFailureHandler(function(err){
+      Swal.fire('خطا', (err && err.message) ? err.message : 'خطا در ثبت','error');
+    }).submitToSheet(payload, 'Leads_Inbox');
+  });
+})();
+</script>
+
+<script>
+(function(){
+  const sa = document.getElementById('submittedAtView');
+  if(sa && window.lastSubmitResult){
+    sa.value = window.lastSubmitResult.submittedAt;
+  }
+})();
+</script>
