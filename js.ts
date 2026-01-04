@@ -39,6 +39,9 @@ function updateLeadStatus(rowIndex, status, priority, owner) {
   const ss = SpreadsheetApp.openById(SS_ID);
   const sourceSheet = ss.getSheetByName("Leads_Inbox");
   const targetSheet = ss.getSheetByName("Negotiation Stage");
+  if (!sourceSheet) {
+    throw new Error("Source sheet not found: Leads_Inbox");
+  }
 
   const sourceHeaders = sourceSheet.getRange(1, 1, 1, sourceSheet.getLastColumn()).getValues()[0].map(h => h.toString().trim());
   const actualRow = parseInt(rowIndex) + 2;
@@ -130,6 +133,9 @@ function updateLeadStatus(rowIndex, status, priority, owner) {
 }
 
 function searchInContractStage(biName) {
+  if (!biName || biName.toString().trim() === "") {
+    return { headers: [], rows: [] };
+  }
   const ss = SpreadsheetApp.openById(SS_ID);
   const sheet = ss.getSheetByName("Contract Stage");
   if (!sheet) return { headers: [], rows: [] };
@@ -144,14 +150,24 @@ function searchInContractStage(biName) {
 function deleteLeadRow(rowIndex) {
   const ss = SpreadsheetApp.openById(SS_ID);
   const sheet = ss.getSheetByName("Leads_Inbox");
+  if (!sheet) {
+    throw new Error("Source sheet not found: Leads_Inbox");
+  }
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => h.toString().trim());
   const actualRow = parseInt(rowIndex) + 2;
-  const inboxId = sheet.getRange(actualRow, headers.indexOf("INBOX_ID") + 1).getValue().toString();
+  const inboxIdIdx = headers.indexOf("INBOX_ID");
+  if (inboxIdIdx === -1) {
+    throw new Error("INBOX_ID column not found in Leads_Inbox");
+  }
+  const inboxId = sheet.getRange(actualRow, inboxIdIdx + 1).getValue().toString();
   sheet.deleteRow(actualRow);
   const targetSheet = ss.getSheetByName("Negotiation Stage");
   if (targetSheet) {
     const targetData = targetSheet.getDataRange().getValues();
     const idCol = targetData[0].indexOf("INBOX_ID");
+    if (idCol === -1) {
+      return "Deleted Successfully";
+    }
     for (let i = 1; i < targetData.length; i++) {
       if (targetData[i][idCol] && targetData[i][idCol].toString() === inboxId) {
         targetSheet.deleteRow(i + 1);
@@ -259,6 +275,9 @@ function updateNegotiationRow(identifier, payload) {
   try {
     const ss = SpreadsheetApp.openById(SS_ID);
     const sheet = ss.getSheetByName("Negotiation Stage");
+    if (!sheet) {
+      throw new Error("Sheet not found: Negotiation Stage");
+    }
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => h.toString().trim());
     
     const pmerColIdx = headers.indexOf("Linked_PMER_ID");
@@ -310,6 +329,10 @@ function setSentForAdjustment(identifier) {
     const ss = SpreadsheetApp.openById(SS_ID);
     const sourceSheet = ss.getSheetByName("Negotiation Stage");
     const targetSheet = ss.getSheetByName("Contract Stage");
+    
+    if (!sourceSheet) {
+      throw new Error("Sheet not found: Negotiation Stage");
+    }
     
     if (!targetSheet) {
       throw new Error("Sheet Contract Stage یافت نشد");
